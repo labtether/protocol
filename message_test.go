@@ -14,9 +14,10 @@ func TestIsKnownMessageType(t *testing.T) {
 		MsgAgentSettingsApply, MsgAgentSettingsApplied, MsgAgentSettingsState,
 		MsgTerminalProbe, MsgTerminalProbed,
 		MsgTerminalStart, MsgTerminalStarted, MsgTerminalData,
-		MsgTerminalResize, MsgTerminalClose, MsgTerminalClosed,
+		MsgTerminalResize, MsgTerminalTmuxKill, MsgTerminalClose, MsgTerminalClosed,
 		MsgDesktopStart, MsgDesktopStarted, MsgDesktopData,
 		MsgDesktopClose, MsgDesktopClosed,
+		MsgDesktopDiagnose, MsgDesktopDiagnosed,
 		MsgDesktopListDisplays, MsgDesktopDisplays,
 		MsgClipboardGet, MsgClipboardData, MsgClipboardSet, MsgClipboardSetAck,
 		MsgDesktopAudioStart, MsgDesktopAudioStop, MsgDesktopAudioData, MsgDesktopAudioState,
@@ -40,6 +41,7 @@ func TestIsKnownMessageType(t *testing.T) {
 		MsgAlertNotify,
 		MsgEnrollmentChallenge, MsgEnrollmentProof,
 		MsgEnrollmentApproved, MsgEnrollmentRejected,
+		MsgWebServiceReport, MsgWebServiceSync,
 	}
 
 	for _, msgType := range known {
