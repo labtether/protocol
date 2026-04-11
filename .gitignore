@@ -1,0 +1,42 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+*.test
+*.prof
+*.pprof
+__debug_bin*
+coverage.out
+coverage.html
+vendor/
+go.work
+go.work.sum
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Editor / IDE
+.vscode/
+.idea/
+.history/
+.vs/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# Claude / AI tooling
+CLAUDE.md
+AGENTS.md
+.claude/
+.mcp.json
+.context/
+
+# Worktrees / MCP
+.superpowers/
+.worktrees/
+.playwright-mcp/
+.gstack/
