@@ -1,3 +1,9 @@
+<div align="center">
+
+<img src=".github/logo.svg" alt="LabTether" width="80" />
+
+</div>
+
 # github.com/labtether/protocol
 
 Shared wire protocol types for LabTether agent-hub WebSocket communication.
