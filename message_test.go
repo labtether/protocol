@@ -8,6 +8,7 @@ import (
 func TestIsKnownMessageType(t *testing.T) {
 	known := []string{
 		MsgHeartbeat, MsgTelemetry, MsgCommandRequest, MsgCommandResult,
+		MsgPowerAction, MsgPowerResult,
 		MsgPing, MsgPong, MsgLogStream, MsgLogBatch,
 		MsgJournalQuery, MsgJournalEntries,
 		MsgConfigUpdate, MsgConfigApplied,
@@ -63,7 +64,7 @@ func TestIsKnownMessageType_RejectsUnknown(t *testing.T) {
 func TestKnownMessageTypesCountMatchesConstants(t *testing.T) {
 	// Keep this in sync with message.go as new protocol capabilities are added.
 	// If a new constant is added but not to KnownMessageTypes, this test fails.
-	const expectedCount = 119
+	const expectedCount = 121
 	if len(KnownMessageTypes) != expectedCount {
 		t.Errorf("KnownMessageTypes has %d entries, want %d (did you add a new message type?)",
 			len(KnownMessageTypes), expectedCount)

@@ -1,6 +1,11 @@
 package protocol
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+	"unicode/utf8"
+)
 
 // Wire protocol message types.
 const (
@@ -8,6 +13,8 @@ const (
 	MsgTelemetry            = "telemetry"
 	MsgCommandRequest       = "command.request"
 	MsgCommandResult        = "command.result"
+	MsgPowerAction          = "power.action"
+	MsgPowerResult          = "power.result"
 	MsgPing                 = "ping"
 	MsgPong                 = "pong"
 	MsgLogStream            = "log.stream"
@@ -167,6 +174,7 @@ const (
 var KnownMessageTypes = map[string]bool{
 	MsgHeartbeat: true, MsgTelemetry: true,
 	MsgCommandRequest: true, MsgCommandResult: true,
+	MsgPowerAction: true, MsgPowerResult: true,
 	MsgPing: true, MsgPong: true,
 	MsgLogStream: true, MsgLogBatch: true,
 	MsgJournalQuery: true, MsgJournalEntries: true,
@@ -274,6 +282,153 @@ type CommandResultData struct {
 	CommandID string `json:"command_id"`
 	Status    string `json:"status"`
 	Output    string `json:"output"`
+}
+
+// PowerAction is the closed set of host power operations that the hub may
+// request from an agent. These operations intentionally use a dedicated typed
+// message instead of the general command channel so they cannot be confused
+// with or weakened by raw-shell execution policy.
+type PowerAction string
+
+const (
+	PowerActionReboot   PowerAction = "reboot"
+	PowerActionShutdown PowerAction = "shutdown"
+)
+
+// Valid reports whether a power action is part of the wire contract.
+func (a PowerAction) Valid() bool {
+	switch a {
+	case PowerActionReboot, PowerActionShutdown:
+		return true
+	default:
+		return false
+	}
+}
+
+// PowerResultStatus is the closed set of outcomes an agent may report. An
+// accepted result means the operating system accepted the request; it does not
+// claim that the machine has already completed the power transition.
+type PowerResultStatus string
+
+const (
+	PowerResultAccepted    PowerResultStatus = "accepted"
+	PowerResultUnsupported PowerResultStatus = "unsupported"
+	PowerResultRejected    PowerResultStatus = "rejected"
+	PowerResultFailed      PowerResultStatus = "failed"
+)
+
+// Valid reports whether a result status is part of the wire contract.
+func (s PowerResultStatus) Valid() bool {
+	switch s {
+	case PowerResultAccepted, PowerResultUnsupported, PowerResultRejected, PowerResultFailed:
+		return true
+	default:
+		return false
+	}
+}
+
+// PowerResultCode is a machine-readable, closed reason for a non-accepted
+// result. It is omitted when Status is PowerResultAccepted.
+type PowerResultCode string
+
+const (
+	PowerResultCodeInvalidRequest      PowerResultCode = "invalid_request"
+	PowerResultCodeAssetMismatch       PowerResultCode = "asset_mismatch"
+	PowerResultCodeCapabilityDenied    PowerResultCode = "capability_denied"
+	PowerResultCodeBusy                PowerResultCode = "busy"
+	PowerResultCodeUnsupportedPlatform PowerResultCode = "unsupported_platform"
+	PowerResultCodeExecutionFailed     PowerResultCode = "execution_failed"
+	PowerResultCodeExecutionTimeout    PowerResultCode = "execution_timeout"
+)
+
+// Valid reports whether a result code is part of the wire contract.
+func (c PowerResultCode) Valid() bool {
+	switch c {
+	case PowerResultCodeInvalidRequest,
+		PowerResultCodeAssetMismatch,
+		PowerResultCodeCapabilityDenied,
+		PowerResultCodeBusy,
+		PowerResultCodeUnsupportedPlatform,
+		PowerResultCodeExecutionFailed,
+		PowerResultCodeExecutionTimeout:
+		return true
+	default:
+		return false
+	}
+}
+
+// PowerActionData is sent from the hub to the agent. RequestID is duplicated
+// in the outer Message.ID so both the envelope and payload can be correlated.
+// AssetID lets the agent reject a message routed to the wrong connection.
+type PowerActionData struct {
+	RequestID string      `json:"request_id"`
+	AssetID   string      `json:"asset_id"`
+	Action    PowerAction `json:"action"`
+}
+
+// Validate enforces the bounded, closed power action wire contract.
+func (d PowerActionData) Validate() error {
+	if strings.TrimSpace(d.RequestID) == "" || len(d.RequestID) > 128 {
+		return fmt.Errorf("invalid request_id")
+	}
+	if strings.TrimSpace(d.AssetID) == "" || len(d.AssetID) > 256 {
+		return fmt.Errorf("invalid asset_id")
+	}
+	if !d.Action.Valid() {
+		return fmt.Errorf("invalid action")
+	}
+	return nil
+}
+
+// PowerResultData is sent from the agent to the hub after the operating system
+// accepts or rejects a power request.
+type PowerResultData struct {
+	RequestID string            `json:"request_id"`
+	AssetID   string            `json:"asset_id"`
+	Action    PowerAction       `json:"action"`
+	Status    PowerResultStatus `json:"status"`
+	Code      PowerResultCode   `json:"code,omitempty"`
+	Message   string            `json:"message,omitempty"`
+}
+
+// Validate enforces status/code compatibility in addition to the action
+// bounds. An accepted result cannot carry an error code, and every non-success
+// status has a closed set of valid reasons.
+func (d PowerResultData) Validate() error {
+	if err := (PowerActionData{RequestID: d.RequestID, AssetID: d.AssetID, Action: d.Action}).Validate(); err != nil {
+		return err
+	}
+	if !d.Status.Valid() {
+		return fmt.Errorf("invalid status")
+	}
+	if len(d.Message) > 256 {
+		return fmt.Errorf("message too long")
+	}
+
+	switch d.Status {
+	case PowerResultAccepted:
+		if d.Code != "" {
+			return fmt.Errorf("accepted result must not include a code")
+		}
+	case PowerResultUnsupported:
+		if d.Code != PowerResultCodeUnsupportedPlatform {
+			return fmt.Errorf("invalid unsupported result code")
+		}
+	case PowerResultRejected:
+		switch d.Code {
+		case PowerResultCodeInvalidRequest,
+			PowerResultCodeAssetMismatch,
+			PowerResultCodeCapabilityDenied,
+			PowerResultCodeBusy:
+		default:
+			return fmt.Errorf("invalid rejected result code")
+		}
+	case PowerResultFailed:
+		if d.Code != PowerResultCodeExecutionFailed && d.Code != PowerResultCodeExecutionTimeout {
+			return fmt.Errorf("invalid failed result code")
+		}
+	}
+	return nil
 }
 
 // LogStreamData carries a single log entry from agent to hub.
@@ -1194,29 +1349,134 @@ type NetworkResultData struct {
 	RollbackReference string `json:"rollback_reference,omitempty"`
 }
 
-// PackageListData is sent from hub to agent to request installed packages.
+// PackageInventory identifies the package inventory requested from an agent.
+// The empty value is retained as a compatibility alias for installed packages.
+type PackageInventory string
+
+const (
+	PackageInventoryInstalled  PackageInventory = "installed"
+	PackageInventoryUpgradable PackageInventory = "upgradable"
+
+	// PackageInventoryMaxItems bounds package arrays carried in one control
+	// message. Implementations should reject oversized results rather than
+	// silently presenting a partial update inventory as complete.
+	PackageInventoryMaxItems = 10_000
+	PackageRequestIDMaxBytes = 512
+	PackageNameMaxBytes      = 1_024
+	PackageVersionMaxBytes   = 1_024
+	PackageStatusMaxBytes    = 256
+	PackageErrorMaxBytes     = 4_096
+)
+
+// Valid reports whether the inventory is a supported wire value. Empty is
+// valid for compatibility with agents and hubs predating the discriminator.
+func (i PackageInventory) Valid() bool {
+	return i == "" || i == PackageInventoryInstalled || i == PackageInventoryUpgradable
+}
+
+// PackageListData is sent from hub to agent to request installed or upgradable
+// packages. Inventory is omitted for the legacy installed-package request.
 type PackageListData struct {
-	RequestID string `json:"request_id"`
+	RequestID string           `json:"request_id"`
+	Inventory PackageInventory `json:"inventory,omitempty"`
 }
 
-// PackageListedData is sent from agent to hub with the installed packages result.
+// Validate checks the bounded package inventory request contract.
+func (d PackageListData) Validate() error {
+	if err := validatePackageWireString(d.RequestID, PackageRequestIDMaxBytes, true); err != nil {
+		return fmt.Errorf("request_id: %w", err)
+	}
+	if !d.Inventory.Valid() {
+		return fmt.Errorf("invalid package inventory %q", d.Inventory)
+	}
+	return nil
+}
+
+// PackageListedData is sent from agent to hub with a package inventory result.
+// Upgradable responses must echo PackageInventoryUpgradable so a new hub can
+// fail closed when connected to an older agent that ignored the request field.
 type PackageListedData struct {
-	RequestID string        `json:"request_id"`
-	Packages  []PackageInfo `json:"packages"`
-	Error     string        `json:"error,omitempty"`
+	RequestID string           `json:"request_id"`
+	Inventory PackageInventory `json:"inventory,omitempty"`
+	Packages  []PackageInfo    `json:"packages"`
+	Error     string           `json:"error,omitempty"`
 }
 
-// PackageInfo describes a single installed package.
+// Validate checks the bounded package inventory result contract. Upgradable
+// results must contain both current and available versions for every entry.
+func (d PackageListedData) Validate() error {
+	if err := validatePackageWireString(d.RequestID, PackageRequestIDMaxBytes, true); err != nil {
+		return fmt.Errorf("request_id: %w", err)
+	}
+	if !d.Inventory.Valid() {
+		return fmt.Errorf("invalid package inventory %q", d.Inventory)
+	}
+	if err := validatePackageWireString(d.Error, PackageErrorMaxBytes, false); err != nil {
+		return fmt.Errorf("error: %w", err)
+	}
+	if len(d.Packages) > PackageInventoryMaxItems {
+		return fmt.Errorf("package inventory exceeds %d entries", PackageInventoryMaxItems)
+	}
+	for index, item := range d.Packages {
+		if err := validatePackageWireString(item.Name, PackageNameMaxBytes, true); err != nil {
+			return fmt.Errorf("package %d name: %w", index+1, err)
+		}
+		requireUpdateFields := d.Inventory == PackageInventoryUpgradable
+		if err := validatePackageWireString(item.Version, PackageVersionMaxBytes, requireUpdateFields); err != nil {
+			return fmt.Errorf("package %d version: %w", index+1, err)
+		}
+		if err := validatePackageWireString(item.Status, PackageStatusMaxBytes, requireUpdateFields); err != nil {
+			return fmt.Errorf("package %d status: %w", index+1, err)
+		}
+		if err := validatePackageWireString(item.AvailableVersion, PackageVersionMaxBytes, false); err != nil {
+			return fmt.Errorf("package %d available_version: %w", index+1, err)
+		}
+		if d.Inventory == PackageInventoryUpgradable && (strings.TrimSpace(item.AvailableVersion) == "" || item.Status != string(PackageInventoryUpgradable)) {
+			return fmt.Errorf("upgradable package %d is incomplete", index+1)
+		}
+	}
+	return nil
+}
+
+// PackageInfo describes a single installed or upgradable package. Version is
+// the installed/current version; AvailableVersion is required for an
+// upgradable inventory entry and omitted from legacy installed inventories.
 type PackageInfo struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-	Status  string `json:"status"` // "installed", "config-files", etc.
+	Name             string `json:"name"`
+	Version          string `json:"version"`
+	AvailableVersion string `json:"available_version,omitempty"`
+	Status           string `json:"status"` // "installed", "upgradable", "config-files", etc.
+}
+
+func validatePackageWireString(value string, maxBytes int, required bool) error {
+	if !utf8.ValidString(value) {
+		return fmt.Errorf("must be valid UTF-8")
+	}
+	if required && strings.TrimSpace(value) == "" {
+		return fmt.Errorf("is required")
+	}
+	if len(value) > maxBytes {
+		return fmt.Errorf("exceeds %d bytes", maxBytes)
+	}
+	if strings.IndexFunc(value, func(r rune) bool { return r < 0x20 || r == 0x7f }) >= 0 {
+		return fmt.Errorf("contains a control character")
+	}
+	return nil
 }
 
 // PackageActionData is sent from hub to agent to run package-manager actions.
+const (
+	PackageActionInstall = "install"
+	PackageActionRemove  = "remove"
+	PackageActionUpgrade = "upgrade"
+	// PackageActionUpdate is a compatibility alias accepted at API/agent
+	// boundaries. Senders should emit PackageActionUpgrade on the agent wire.
+	PackageActionUpdate = "update"
+)
+
 type PackageActionData struct {
 	RequestID string   `json:"request_id"`
-	Action    string   `json:"action"` // install|remove|upgrade
+	Action    string   `json:"action"` // canonical: install|remove|upgrade; update accepted as an alias
 	Packages  []string `json:"packages,omitempty"`
 }
 

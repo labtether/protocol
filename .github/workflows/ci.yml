@@ -5,12 +5,18 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   go-checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: '1.26'
       - name: Check formatting
@@ -23,5 +29,19 @@ jobs:
           fi
       - run: go vet ./...
         name: Vet
-      - run: go test ./...
-        name: Test
+      - run: go test -race ./...
+        name: Race test
+      - name: Install pinned source-quality tools
+        env:
+          GOBIN: ${{ runner.temp }}/quality-bin
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.25.0
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          go install github.com/zricethezav/gitleaks/v8@v8.30.1
+          echo "${GOBIN}" >> "${GITHUB_PATH}"
+      - name: Go security scan
+        run: gosec -quiet ./...
+      - name: Lint GitHub Actions workflows
+        run: actionlint
+      - name: Scan current source for secrets
+        run: gitleaks dir . --no-banner --redact --timeout 300
