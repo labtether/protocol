@@ -1,0 +1,64 @@
+{
+  "schema": "labtether-agent-wire-conformance/v1",
+  "cases": [
+    {
+      "name": "heartbeat",
+      "data_contract": "HeartbeatData",
+      "message": {
+        "type": "heartbeat",
+        "id": "heartbeat-1",
+        "data": {
+          "asset_id": "node-1",
+          "type": "device",
+          "name": "Node One",
+          "source": "agent",
+          "status": "online",
+          "platform": "linux",
+          "capabilities": ["terminal", "files"]
+        }
+      }
+    },
+    {
+      "name": "enrollment-challenge",
+      "data_contract": "EnrollmentChallengeData",
+      "message": {
+        "type": "enrollment.challenge",
+        "id": "enrollment-1",
+        "data": {
+          "connection_id": "connection-1",
+          "nonce": "bm9uY2U=",
+          "expires_at": "2026-07-24T00:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "enrollment-proof",
+      "data_contract": "EnrollmentProofData",
+      "message": {
+        "type": "enrollment.proof",
+        "id": "enrollment-1",
+        "data": {
+          "connection_id": "connection-1",
+          "nonce": "bm9uY2U=",
+          "key_algorithm": "ed25519",
+          "public_key": "cHVibGljLWtleQ==",
+          "fingerprint": "SHA256:fixture",
+          "signature": "c2lnbmF0dXJl"
+        }
+      }
+    },
+    {
+      "name": "power-action",
+      "data_contract": "PowerActionData",
+      "message": {
+        "type": "power.action",
+        "id": "power-1",
+        "data": {
+          "request_id": "power-1",
+          "asset_id": "node-1",
+          "action": "reboot"
+        }
+      }
+    }
+  ]
+}

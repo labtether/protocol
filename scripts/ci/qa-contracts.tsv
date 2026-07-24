@@ -1,0 +1,10 @@
+# contract_id	path_glob	reason
+wire-conformance	*.go	Wire-shape changes must preserve language-neutral JSON conformance fixtures
+wire-conformance	testdata/conformance/**	Conformance fixture changes must round-trip through the canonical Go types
+wire-conformance	go.mod	Toolchain changes must rerun wire conformance
+wire-conformance	scripts/ci/**	QA contract changes must prove every protocol contract
+wire-conformance	.github/workflows/ci.yml	CI routing changes must prove every protocol contract
+consumer-compatibility	message.go	Shared protocol changes require Hub and native-agent consumer compatibility before release
+consumer-compatibility	testdata/conformance/**	Fixture changes require Hub and native-agent consumer compatibility before release
+consumer-compatibility	scripts/ci/**	QA contract changes must retain the downstream consumer requirement
+consumer-compatibility	.github/workflows/ci.yml	CI routing changes must retain the downstream consumer requirement
