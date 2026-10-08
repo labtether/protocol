@@ -4,7 +4,7 @@ wire-conformance	testdata/conformance/**	Conformance fixture changes must round-
 wire-conformance	go.mod	Toolchain changes must rerun wire conformance
 wire-conformance	scripts/ci/**	QA contract changes must prove every protocol contract
 wire-conformance	.github/workflows/ci.yml	CI routing changes must prove every protocol contract
-consumer-compatibility	message.go	Shared protocol changes require Hub and native-agent consumer compatibility before release
+consumer-compatibility	!(*_test).go	Shared protocol changes require Hub and native-agent consumer compatibility before release
 consumer-compatibility	testdata/conformance/**	Fixture changes require Hub and native-agent consumer compatibility before release
 consumer-compatibility	scripts/ci/**	QA contract changes must retain the downstream consumer requirement
 consumer-compatibility	.github/workflows/ci.yml	CI routing changes must retain the downstream consumer requirement

@@ -28,9 +28,7 @@ go.work.sum
 *.swo
 *~
 
-# Claude / AI tooling
-CLAUDE.md
-AGENTS.md
+# Local AI tool state (shared AGENTS.md and CLAUDE.md are versioned)
 .claude/
 .mcp.json
 .context/
@@ -40,3 +38,7 @@ AGENTS.md
 .worktrees/
 .playwright-mcp/
 .gstack/
+
+# Python helper cache
+__pycache__/
+*.py[cod]
