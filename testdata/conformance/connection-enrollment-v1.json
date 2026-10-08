@@ -1,0 +1,131 @@
+{
+  "schema": "labtether-connection-enrollment/v1",
+  "discovery": {
+    "path": "/api/v1/discover",
+    "required_fields": [
+      "api_base_url",
+      "hub_ws_url",
+      "enroll_url"
+    ],
+    "transport_cases": [
+      {
+        "name": "secure-origin",
+        "origin_scheme": "https",
+        "origin_host_class": "any",
+        "websocket_scheme": "wss",
+        "allow_insecure_transport": false
+      },
+      {
+        "name": "explicit-insecure-loopback",
+        "origin_scheme": "http",
+        "origin_host_class": "loopback",
+        "websocket_scheme": "ws",
+        "allow_insecure_transport": true
+      }
+    ],
+    "trust_cases": [
+      {
+        "name": "system-trust",
+        "custom_ca": false,
+        "skip_verification": false,
+        "accepted": true
+      },
+      {
+        "name": "custom-ca",
+        "custom_ca": true,
+        "skip_verification": false,
+        "accepted": true
+      },
+      {
+        "name": "reject-custom-ca-and-skip-conflict",
+        "custom_ca": true,
+        "skip_verification": true,
+        "accepted": false
+      }
+    ]
+  },
+  "identity": {
+    "proof_version": "v2",
+    "canonical_asset_id_cases": [
+      {
+        "input": "  My Mac.local  ",
+        "expected": "my-mac.local"
+      },
+      {
+        "input": "NODE_Name-1.local",
+        "expected": "node_name-1.local"
+      },
+      {
+        "input": "!!!node???name!!!",
+        "expected": "node---name"
+      },
+      {
+        "input": "αHostβ.local",
+        "expected": "host-.local"
+      },
+      {
+        "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa?tail",
+        "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaé",
+        "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "input": "🎉",
+        "expected": ""
+      }
+    ]
+  },
+  "state_machine": {
+    "states": [
+      "unconfigured",
+      "enrolling",
+      "connected_durable",
+      "auth_failed",
+      "reenrolling",
+      "stopped"
+    ],
+    "transitions": [
+      {
+        "from": "unconfigured",
+        "event": "submit_one_use_token",
+        "to": "enrolling"
+      },
+      {
+        "from": "enrolling",
+        "event": "durable_credential_committed",
+        "to": "connected_durable"
+      },
+      {
+        "from": "connected_durable",
+        "event": "credential_revoked",
+        "to": "auth_failed"
+      },
+      {
+        "from": "auth_failed",
+        "event": "submit_reenrollment_token",
+        "to": "reenrolling"
+      },
+      {
+        "from": "reenrolling",
+        "event": "durable_credential_committed",
+        "to": "connected_durable"
+      },
+      {
+        "from": "connected_durable",
+        "event": "operator_stop",
+        "to": "stopped"
+      }
+    ],
+    "commit_invariants": [
+      "canonical_asset_id_matches_hub",
+      "device_key_is_preserved",
+      "durable_credential_is_private",
+      "one_use_token_is_removed_after_commit",
+      "revoked_durable_credential_is_denied",
+      "native_wrapper_state_is_isolated_from_service_state",
+      "failed_commit_rolls_back_without_starting_child"
+    ]
+  }
+}

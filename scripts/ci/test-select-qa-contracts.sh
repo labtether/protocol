@@ -14,6 +14,12 @@ output="$("${selector}" --files-from "${tmp_dir}/files")"
 grep -Fq "QA contract wire-conformance:" <<< "${output}"
 grep -Fq "QA contract consumer-compatibility:" <<< "${output}"
 
+for source in agent_runtime.go docker_endpoint.go remote_access.go system_operations.go; do
+  printf '%s\n' "${source}" > "${tmp_dir}/files"
+  output="$("${selector}" --files-from "${tmp_dir}/files")"
+  grep -Fq "QA contract consumer-compatibility:" <<< "${output}"
+done
+
 printf '%s\n' "power_test.go" > "${tmp_dir}/files"
 output="$("${selector}" --files-from "${tmp_dir}/files")"
 grep -Fq "QA contract wire-conformance:" <<< "${output}"
