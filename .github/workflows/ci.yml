@@ -152,11 +152,11 @@ jobs:
       - name: Prove Hub against exact protocol revision
         working-directory: _consumers/hub
         run: |
-          go mod edit -replace "github.com/labtether/protocol=${GITHUB_WORKSPACE}"
+          go mod edit -go="$(awk '$1 == "go" {print $2; exit}' "${GITHUB_WORKSPACE}/go.mod")" -replace "github.com/labtether/protocol=${GITHUB_WORKSPACE}"
           go test -run '^$' ./...
           go test ./internal/agentmgr
       - name: Prove Go agent against exact protocol revision
         working-directory: _consumers/agent
         run: |
-          go mod edit -replace "github.com/labtether/protocol=${GITHUB_WORKSPACE}"
+          go mod edit -go="$(awk '$1 == "go" {print $2; exit}' "${GITHUB_WORKSPACE}/go.mod")" -replace "github.com/labtether/protocol=${GITHUB_WORKSPACE}"
           go test ./...
