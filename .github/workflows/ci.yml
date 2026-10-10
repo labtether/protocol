@@ -6,6 +6,10 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || (github.event_name == 'push' && github.ref_type == 'branch' && github.ref) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type == 'branch') }}
+
 permissions:
   contents: read
 
@@ -25,7 +29,9 @@ jobs:
 
   qa-contracts:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
+      checks_required: ${{ steps.select.outputs.checks_required }}
       contracts: ${{ steps.select.outputs.contracts }}
       mode: ${{ steps.select.outputs.mode }}
     steps:
@@ -50,17 +56,19 @@ jobs:
             --head "${GITHUB_SHA}"
 
   go-checks:
-    needs: [line-limit]
-    if: always()
+    needs: [line-limit, qa-contracts]
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Require source-size gate
+      - name: Require source-size and selection gates
         shell: bash
         env:
           LINE_LIMIT_RESULT: ${{ needs.line-limit.result }}
+          SELECTION_RESULT: ${{ needs.qa-contracts.result }}
         run: |
           test "${LINE_LIMIT_RESULT}" = success
+          test "${SELECTION_RESULT}" = success
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -68,6 +76,7 @@ jobs:
         with:
           go-version: '1.26.9'
       - name: Check formatting
+        if: needs.qa-contracts.outputs.checks_required != 'false'
         run: |
           UNFORMATTED=$(gofmt -l .)
           if [ -n "$UNFORMATTED" ]; then
@@ -77,17 +86,23 @@ jobs:
           fi
       - run: go vet ./...
         name: Vet
+        if: needs.qa-contracts.outputs.checks_required != 'false'
       - run: go test -race ./...
         name: Race test
+        if: needs.qa-contracts.outputs.checks_required != 'false'
       - name: Install pinned source-quality tools
         env:
           GOBIN: ${{ runner.temp }}/quality-bin
+          CHECKS_REQUIRED: ${{ needs.qa-contracts.outputs.checks_required }}
         run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@v2.25.0
+          if [[ "${CHECKS_REQUIRED}" != "false" ]]; then
+            go install github.com/securego/gosec/v2/cmd/gosec@v2.25.0
+          fi
           go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           go install github.com/zricethezav/gitleaks/v8@v8.30.1
           echo "${GOBIN}" >> "${GITHUB_PATH}"
       - name: Go security scan
+        if: needs.qa-contracts.outputs.checks_required != 'false'
         run: gosec -quiet ./...
       - name: Lint GitHub Actions workflows
         run: actionlint
@@ -96,7 +111,7 @@ jobs:
 
   wire-conformance:
     needs: qa-contracts
-    if: contains(format(',{0},', needs.qa-contracts.outputs.contracts), ',wire-conformance,')
+    if: needs.qa-contracts.outputs.checks_required != 'false' && contains(format(',{0},', needs.qa-contracts.outputs.contracts), ',wire-conformance,')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -111,7 +126,7 @@ jobs:
 
   consumer-compatibility:
     needs: qa-contracts
-    if: contains(format(',{0},', needs.qa-contracts.outputs.contracts), ',consumer-compatibility,')
+    if: needs.qa-contracts.outputs.checks_required != 'false' && contains(format(',{0},', needs.qa-contracts.outputs.contracts), ',consumer-compatibility,')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
