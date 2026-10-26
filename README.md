@@ -33,6 +33,11 @@ msg := protocol.Message{
 - Only standard library imports (`encoding/json`).
 - Extracted from `hub/internal/agentmgr/message.go`.
 
+## Compatibility
+
+The Hub and the Go agent must pin the same protocol version. Wire changes are
+additive; see [CHANGELOG.md](CHANGELOG.md) for what each release adds.
+
 ## Security
 
 Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
