@@ -32,3 +32,11 @@ msg := protocol.Message{
 - Zero dependencies on hub-internal packages.
 - Only standard library imports (`encoding/json`).
 - Extracted from `hub/internal/agentmgr/message.go`.
+
+## Security
+
+Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).
