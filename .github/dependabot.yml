@@ -1,12 +1,14 @@
 version: 2
 updates:
   - package-ecosystem: gomod
+    open-pull-requests-limit: 0
     directory: /
     schedule:
       interval: weekly
     cooldown:
       default-days: 7
   - package-ecosystem: github-actions
+    open-pull-requests-limit: 0
     directory: /
     schedule:
       interval: weekly
