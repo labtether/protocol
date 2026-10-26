@@ -162,6 +162,7 @@ const (
 	MsgDockerExecClose          = "docker.exec.close"           // Hub → Agent: close exec
 	MsgDockerExecClosed         = "docker.exec.closed"          // Agent → Hub: exec ended
 	MsgDockerComposeAction      = "docker.compose.action"       // Hub → Agent: stack operation
+	MsgDockerComposeActionV2    = "docker.compose.action.v2"    // Hub → Agent: exact ordered config selection
 	MsgDockerComposeResult      = "docker.compose.result"       // Agent → Hub: stack result
 
 	// Web service discovery messages.
@@ -218,7 +219,7 @@ var KnownMessageTypes = map[string]bool{
 	MsgDockerExecStart: true, MsgDockerExecStarted: true, MsgDockerExecData: true,
 	MsgDockerExecInput: true, MsgDockerExecResize: true,
 	MsgDockerExecClose: true, MsgDockerExecClosed: true,
-	MsgDockerComposeAction: true, MsgDockerComposeResult: true,
+	MsgDockerComposeAction: true, MsgDockerComposeActionV2: true, MsgDockerComposeResult: true,
 	MsgWebServiceReport: true, MsgWebServiceSync: true,
 }
 

@@ -21,6 +21,7 @@ type conformanceFixtureCase struct {
 
 func TestAgentWireConformanceFixtures(t *testing.T) {
 	t.Run("agent wire messages", testAgentWireMessages)
+	t.Run("compose endpoint field types", testComposeEndpointWireTypes)
 	t.Run("connection and enrollment", testConnectionEnrollmentContract)
 }
 
@@ -59,6 +60,12 @@ func testAgentWireMessages(t *testing.T) {
 				contract = &EnrollmentProofData{}
 			case "PowerActionData":
 				contract = &PowerActionData{}
+			case "DockerDiscoveryData":
+				contract = &DockerDiscoveryData{}
+			case "DockerDiscoveryDeltaData":
+				contract = &DockerDiscoveryDeltaData{}
+			case "DockerComposeActionData":
+				contract = &DockerComposeActionData{}
 			default:
 				t.Fatalf("unsupported data contract %q", fixtureCase.DataContract)
 			}
@@ -296,5 +303,26 @@ func assertJSONEqual(t *testing.T, want, got []byte) {
 	gotCanonical, _ := json.Marshal(gotValue)
 	if !bytes.Equal(wantCanonical, gotCanonical) {
 		t.Fatalf("JSON round-trip changed wire shape:\nwant %s\ngot  %s", wantCanonical, gotCanonical)
+	}
+}
+
+// Legacy messages may omit endpoint identity. A non-string identity must not
+// silently decode to an empty selector; v2 runtime owners validate string values.
+func testComposeEndpointWireTypes(t *testing.T) {
+	for _, item := range []struct {
+		name       string
+		field      string
+		newPayload func() any
+	}{
+		{"full", "compose_endpoint_id", func() any { return &DockerDiscoveryData{} }},
+		{"delta", "compose_endpoint_id", func() any { return &DockerDiscoveryDeltaData{} }},
+		{"action", "endpoint_id", func() any { return &DockerComposeActionData{} }},
+	} {
+		t.Run(item.name, func(t *testing.T) {
+			raw := []byte(`{"` + item.field + `":42}`)
+			if err := json.Unmarshal(raw, item.newPayload()); err == nil {
+				t.Fatal("non-string endpoint identity accepted")
+			}
+		})
 	}
 }

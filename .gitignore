@@ -42,3 +42,6 @@ go.work.sum
 # Python helper cache
 __pycache__/
 *.py[cod]
+
+# Local task scratch space
+work/
