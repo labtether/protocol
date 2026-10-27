@@ -66,6 +66,8 @@ func testAgentWireMessages(t *testing.T) {
 				contract = &DockerDiscoveryDeltaData{}
 			case "DockerComposeActionData":
 				contract = &DockerComposeActionData{}
+			case "CommandResultData":
+				contract = &CommandResultData{}
 			default:
 				t.Fatalf("unsupported data contract %q", fixtureCase.DataContract)
 			}
