@@ -15,7 +15,7 @@ usage() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode) mode="${2:?missing mode}"; shift 2 ;;
-    --base) base="${2:?missing base SHA}"; shift 2 ;;
+    --base) base="${2?missing base SHA}"; shift 2 ;;
     --head) head="${2:?missing head SHA}"; shift 2 ;;
     --files-from) files_from="${2:?missing files path}"; shift 2 ;;
     --manifest) manifest="${2:?missing manifest path}"; shift 2 ;;

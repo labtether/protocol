@@ -162,3 +162,35 @@ jobs:
         run: |
           go mod edit -go="$(awk '$1 == "go" {print $2; exit}' "${GITHUB_WORKSPACE}/go.mod")" -replace "github.com/labtether/protocol=${GITHUB_WORKSPACE}"
           go test ./...
+
+  ci-result:
+    name: CI result
+    needs: [line-limit, qa-contracts, go-checks, wire-conformance, consumer-compatibility]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every selected check to pass
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          jobs = json.loads(os.environ["NEEDS_JSON"])
+          required = {"line-limit", "qa-contracts", "go-checks"}
+          outputs = jobs["qa-contracts"]["outputs"]
+          checks = outputs.get("checks_required")
+          if checks not in ("true", "false"):
+              sys.exit("QA selection did not produce a valid check plan")
+          selected = set(outputs.get("contracts", "").split(","))
+          if checks == "true":
+              required.update(selected & {"wire-conformance", "consumer-compatibility"})
+          failed = [name for name, job in jobs.items()
+                    if job["result"] not in (("success",) if name in required else ("success", "skipped"))]
+          if failed:
+              sys.exit("CI failed: " + ", ".join(sorted(failed)))
+          print("All required CI checks passed.")
+          PY
