@@ -28,9 +28,20 @@ if grep -Fq "QA contract consumer-compatibility:" <<< "${output}"; then
   exit 1
 fi
 
-output="$("${selector}" --mode full)"
+output="$("${selector}" --mode full --base '' --head HEAD)"
 grep -Fq "QA contract wire-conformance:" <<< "${output}"
 grep -Fq "QA contract consumer-compatibility:" <<< "${output}"
+
+# Manual dispatch has no before/base SHA; it must still run every contract.
+output="$(GITHUB_OUTPUT="${tmp_dir}/manual-output" "${selector}" --base '' --head HEAD)"
+grep -Fxq 'mode=full' "${tmp_dir}/manual-output"
+grep -Fxq 'checks_required=true' "${tmp_dir}/manual-output"
+grep -Fq "QA contract consumer-compatibility:" <<< "${output}"
+
+if "${selector}" --base >/dev/null 2>&1; then
+  echo "missing --base argument was accepted" >&2
+  exit 1
+fi
 
 output="$("${selector}" --base 0000000000000000000000000000000000000000 --head HEAD)"
 grep -Fq "QA contract wire-conformance:" <<< "${output}"
