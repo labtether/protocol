@@ -3,7 +3,9 @@
 All notable changes to `github.com/labtether/protocol`. The Hub and the Go
 agent must pin the same protocol version.
 
-## Unreleased
+## v1.7.1 - unreleased
+
+Changes since v1.7.0.
 
 ### Command exit codes
 
