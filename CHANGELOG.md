@@ -17,6 +17,12 @@ Changes since v1.7.0.
 - Conformance fixtures cover a result without `exit_code`, with `0` and with a
   failing code.
 
+### SSH host keys
+
+- `SSHKeyInstalledData` (`ssh_key.installed`) gains optional `host_keys`: the
+  device's SSH host public keys in authorized_keys format. The hub pins them
+  so its SSH fallback can check the device's host key. Older agents omit it.
+
 ## v1.7.0
 
 Changes since v1.6.5. All wire changes are additive: every message type and
