@@ -3,6 +3,26 @@
 All notable changes to `github.com/labtether/protocol`. The Hub and the Go
 agent must pin the same protocol version.
 
+## v1.7.1 - unreleased
+
+Changes since v1.7.0.
+
+### Command exit codes
+
+- `CommandResultData` (`command.result`) gains optional `exit_code`. Agents
+  set it when they know the command's exit status, including `0`. It is
+  absent when unknown: older agents, a command that never started, or one
+  stopped by a signal or timeout. `status` still decides success, so Hubs
+  that ignore the field keep working.
+- Conformance fixtures cover a result without `exit_code`, with `0` and with a
+  failing code.
+
+### SSH host keys
+
+- `SSHKeyInstalledData` (`ssh_key.installed`) gains optional `host_keys`: the
+  device's SSH host public keys in authorized_keys format. The hub pins them
+  so its SSH fallback can check the device's host key. Older agents omit it.
+
 ## v1.7.0
 
 Changes since v1.6.5. All wire changes are additive: every message type and
