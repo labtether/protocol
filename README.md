@@ -4,11 +4,15 @@
 
 </div>
 
-# github.com/labtether/protocol
+# LabTether protocol
 
-Shared wire protocol types for LabTether agent-hub WebSocket communication.
+The messages the [LabTether](https://github.com/labtether/labtether) hub and
+its [agents](https://github.com/labtether/labtether-agent) send each other over
+their WebSocket connection.
 
-This module contains the `Message` envelope, all message type constants, and typed data structs for every protocol message payload. It is imported by both the hub and the agent, ensuring they share a single source of truth for the protocol schema.
+It holds the `Message` envelope, every message type and a typed struct for each
+payload. The hub and the agent both import it, so they always agree on the
+format.
 
 ## Install
 
@@ -16,7 +20,7 @@ This module contains the `Message` envelope, all message type constants, and typ
 go get github.com/labtether/protocol@latest
 ```
 
-## Usage
+## Use
 
 ```go
 import "github.com/labtether/protocol"
@@ -27,16 +31,15 @@ msg := protocol.Message{
 }
 ```
 
-## Design constraints
+## Rules
 
-- Zero dependencies on hub-internal packages.
-- Only standard library imports (`encoding/json`).
-- Extracted from `hub/internal/agentmgr/message.go`.
+- Standard library only (`encoding/json`). No imports from the hub.
+- Wire changes are additive. [CHANGELOG.md](CHANGELOG.md) lists what each
+  release adds.
+- The hub and the Go agent must pin the same protocol version. Release the
+  protocol first, then the agent, then the hub.
 
-## Compatibility
-
-The Hub and the Go agent must pin the same protocol version. Wire changes are
-additive; see [CHANGELOG.md](CHANGELOG.md) for what each release adds.
+If you work with an AI coding agent, point it at [AGENTS.md](AGENTS.md) first.
 
 ## Security
 
@@ -44,4 +47,4 @@ Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+[Apache 2.0](LICENSE). Copyright 2026 LabTether.

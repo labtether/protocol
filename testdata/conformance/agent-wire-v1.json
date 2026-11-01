@@ -223,6 +223,53 @@
           "endpoint_id": "b45725e06f1a7a1b76a0cab212e2752a316cc7b59df142380761acb66c708ddc"
         }
       }
+    },
+    {
+      "name": "command result without exit code",
+      "data_contract": "CommandResultData",
+      "message": {
+        "type": "command.result",
+        "id": "job-1",
+        "data": {
+          "job_id": "job-1",
+          "session_id": "session-1",
+          "command_id": "command-1",
+          "status": "succeeded",
+          "output": "up 3 days"
+        }
+      }
+    },
+    {
+      "name": "command result with exit code zero",
+      "data_contract": "CommandResultData",
+      "message": {
+        "type": "command.result",
+        "id": "job-2",
+        "data": {
+          "job_id": "job-2",
+          "session_id": "session-1",
+          "command_id": "command-2",
+          "status": "succeeded",
+          "output": "",
+          "exit_code": 0
+        }
+      }
+    },
+    {
+      "name": "command result with failing exit code",
+      "data_contract": "CommandResultData",
+      "message": {
+        "type": "command.result",
+        "id": "job-3",
+        "data": {
+          "job_id": "job-3",
+          "session_id": "session-1",
+          "command_id": "command-3",
+          "status": "failed",
+          "output": "grep: no match",
+          "exit_code": 1
+        }
+      }
     }
   ]
 }

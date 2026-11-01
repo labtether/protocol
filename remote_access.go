@@ -65,6 +65,10 @@ type SSHKeyInstalledData struct {
 	Username string `json:"username"`
 	Hostname string `json:"hostname"`
 	HomeDir  string `json:"home_dir"`
+	// HostKeys lists the device's SSH host public keys in authorized_keys
+	// format, read by the agent from the SSH server's host key files. The hub
+	// pins them for its SSH fallback. Older agents omit the field.
+	HostKeys []string `json:"host_keys,omitempty"`
 }
 
 // DesktopStartData is sent from hub to agent to start a VNC session.

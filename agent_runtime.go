@@ -48,6 +48,10 @@ type CommandResultData struct {
 	CommandID string `json:"command_id"`
 	Status    string `json:"status"`
 	Output    string `json:"output"`
+	// ExitCode is the command's exit status when the agent knows it. It is
+	// nil when unknown: an older agent, a command that never started, or one
+	// stopped by a signal or timeout. Status still decides success.
+	ExitCode *int `json:"exit_code,omitempty"`
 }
 
 // LogStreamData carries a single log entry from agent to hub.
