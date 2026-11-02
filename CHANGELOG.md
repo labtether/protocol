@@ -3,7 +3,17 @@
 All notable changes to `github.com/labtether/protocol`. The Hub and the Go
 agent must pin the same protocol version.
 
-## v1.7.1 - unreleased
+## v2.0.0 - unreleased
+
+Changes since v1.7.1. No message type, field or JSON shape changed: the wire
+format is the same as in v1.7.1. The version moves to 2.0.0 with the rest of
+LabTether 2.0.
+
+### Project
+
+- `AGENTS.md` carries the plain-language rules for user-facing text.
+
+## v1.7.1
 
 Changes since v1.7.0.
 
