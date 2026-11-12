@@ -3,6 +3,11 @@
 All notable changes to `github.com/labtether/protocol`. The Hub and the Go
 agent must pin the same protocol version.
 
+## v2.0.1
+
+No change to the protocol since v2.0.0. The tag exists so that the Hub, the
+agents and the CLI all carry the version of LabTether 2.0.1.
+
 ## v2.0.0 - unreleased
 
 Changes since v1.7.1. No message type, field or JSON shape changed: the wire
