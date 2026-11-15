@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/labtether/protocol/localagent/status.v1.schema.json",
+  "title": "LabTether local agent status v1",
+  "description": "Body of GET /agent/status on the agent's local API, as the Go agent sends it (internal/agentcore/local_status.go StatusResponse). codes.v1.json holds the rules between fields that a schema cannot say.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_name",
+    "asset_id",
+    "port",
+    "connected",
+    "connection_state",
+    "started_at",
+    "metrics",
+    "alerts",
+    "agent_version",
+    "local_auth_enabled",
+    "allow_insecure_transport",
+    "update_available"
+  ],
+  "properties": {
+    "agent_name": {
+      "description": "AGENT_NAME, default labtether-agent.",
+      "type": "string"
+    },
+    "asset_id": {
+      "description": "The asset ID the agent reports as, from the running identity.",
+      "type": "string"
+    },
+    "group_id": {
+      "description": "Omitted when the agent has no group.",
+      "type": "string",
+      "minLength": 1
+    },
+    "port": {
+      "description": "AGENT_PORT as a decimal string.",
+      "type": "string",
+      "pattern": "^[0-9]{1,5}$"
+    },
+    "device_fingerprint": {
+      "description": "Omitted when the agent has no device key.",
+      "type": "string",
+      "minLength": 1
+    },
+    "device_key_algorithm": {
+      "description": "Omitted when the agent has no device key.",
+      "type": "string",
+      "minLength": 1
+    },
+    "connected": {
+      "description": "True only for an authenticated Hub connection. A socket that waits for enrollment approval is false.",
+      "type": "boolean"
+    },
+    "connection_state": {
+      "type": "string",
+      "enum": ["connected", "connecting", "auth_failed", "disconnected"]
+    },
+    "disconnected_at": {
+      "description": "When the agent first lost or failed its Hub connection. Omitted while connected, while enrollment waits for approval, and before any failure.",
+      "$ref": "#/$defs/timestamp"
+    },
+    "last_error": {
+      "description": "Fixed code. codes.v1.json lists which codes go with each connection_state.",
+      "type": "string",
+      "enum": [
+        "auth_failed",
+        "transient",
+        "enrollment_pending",
+        "enrollment_token_rejected",
+        "agent_token_persistence_failed",
+        "consumed_enrollment_token_cleanup_failed",
+        "agent_token_persistence_failed,consumed_enrollment_token_cleanup_failed"
+      ]
+    },
+    "last_error_reason": {
+      "description": "Fixed code for the last failed connect attempt.",
+      "type": "string",
+      "enum": [
+        "name_lookup_failed",
+        "connection_refused",
+        "host_unreachable",
+        "timed_out",
+        "certificate_untrusted",
+        "token_rejected"
+      ]
+    },
+    "enrollment_error": {
+      "description": "The Hub's own words for a refused enrollment, one line of printable text, at most 300 characters. Never sent while connected is true.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "uptime": {
+      "description": "Go time.Duration text truncated to whole seconds, such as 45s, 3m2s or 2h14m33s. The Go type omits it when started_at is the zero time.",
+      "type": "string",
+      "pattern": "^(0s|([0-9]+h)?([0-9]+m)?[0-9]+s)$"
+    },
+    "started_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "metrics": {
+      "$ref": "#/$defs/metrics"
+    },
+    "alerts": {
+      "description": "Alerts the Hub pushed, oldest first. Always present; [] when there are none.",
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "$ref": "#/$defs/alert"
+      }
+    },
+    "agent_version": {
+      "description": "Build version text, such as v2.0.1, git:abcdef or dev.",
+      "type": "string"
+    },
+    "local_bind_address": {
+      "description": "Address the local API listens on. Omitted when unset.",
+      "type": "string",
+      "minLength": 1
+    },
+    "local_auth_enabled": {
+      "type": "boolean"
+    },
+    "allow_insecure_transport": {
+      "description": "LABTETHER_ALLOW_INSECURE_TRANSPORT is on.",
+      "type": "boolean"
+    },
+    "update_available": {
+      "description": "The Go agent always sends false.",
+      "type": "boolean"
+    },
+    "latest_version": {
+      "description": "Declared by the Go type, never sent by the Go agent.",
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "timestamp": {
+      "description": "Go time.Time JSON: RFC 3339 with 0 to 9 fraction digits, trailing zeros dropped, Z for UTC or a numeric offset.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{0,8}[1-9])?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "percent": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "metrics": {
+      "description": "The latest telemetry sample (internal/agentcore/types.go TelemetrySample). Before the first collection every number is 0.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_id",
+        "cpu_percent",
+        "memory_percent",
+        "disk_percent",
+        "net_rx_bytes",
+        "net_tx_bytes",
+        "net_rx_bytes_per_sec",
+        "net_tx_bytes_per_sec",
+        "collected_at"
+      ],
+      "properties": {
+        "asset_id": { "type": "string" },
+        "cpu_percent": { "$ref": "#/$defs/percent" },
+        "memory_percent": { "$ref": "#/$defs/percent" },
+        "disk_percent": { "$ref": "#/$defs/percent" },
+        "net_rx_bytes": { "type": "number" },
+        "net_tx_bytes": { "type": "number" },
+        "net_rx_bytes_per_sec": { "type": "number" },
+        "net_tx_bytes_per_sec": { "type": "number" },
+        "temp_celsius": {
+          "description": "Omitted when the platform gives no temperature.",
+          "type": "number"
+        },
+        "collected_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "alert": {
+      "description": "One alert as the Hub sent it in alert.notify. The agent passes severity, state and the text through without checking them. A timestamp the agent cannot read becomes 0001-01-01T00:00:00Z.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "title", "summary", "state", "timestamp"],
+      "properties": {
+        "id": { "type": "string" },
+        "severity": { "type": "string" },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "state": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/timestamp" }
+      }
+    }
+  }
+}
