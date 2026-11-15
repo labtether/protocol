@@ -33,7 +33,10 @@ Type and field names follow the Go package: `HeartbeatData.AssetID` is
 
 ## Checks
 
+The crate builds on the latest stable Rust.
+
 ```bash
+rustup update stable
 cargo fmt --check
 cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked

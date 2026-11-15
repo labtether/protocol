@@ -108,6 +108,8 @@ Read user-facing text once against this list before you ship it.
   and fails when a message type, payload, field or closed value exists on one
   side only. Also run `cargo fmt --check` and
   `cargo clippy --locked --all-targets -- -D warnings`.
+- Rust builds on the latest stable release (owner rule). Run
+  `rustup update stable` before the checks; do not pin an older version.
 - Keep the package independent of Hub internals. It uses only the standard
   library; add a dependency only when the change needs it.
 - Keep the wire format compatible. A schema change needs matching Hub and

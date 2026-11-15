@@ -155,7 +155,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # rust/rust-toolchain.toml pins the toolchain; rustup installs it on first use.
+      # rust/rust-toolchain.toml asks for stable; the runner image can be one
+      # release behind, so fetch the latest first.
+      - name: Use the latest stable Rust
+        run: rustup update stable --no-self-update
       - name: Check formatting
         run: cargo fmt --check
       - name: Lint
