@@ -45,3 +45,6 @@ __pycache__/
 
 # Local task scratch space
 work/
+
+# Rust
+rust/target/

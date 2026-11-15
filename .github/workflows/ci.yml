@@ -142,6 +142,27 @@ jobs:
       - name: Prove language-neutral wire fixtures
         run: go test -run '^TestAgentWireConformanceFixtures$' ./...
 
+  rust-parity:
+    name: Rust crate / parity with Go
+    needs: qa-contracts
+    if: needs.qa-contracts.outputs.checks_required != 'false' && contains(format(',{0},', needs.qa-contracts.outputs.contracts), ',rust-parity,')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # rust/rust-toolchain.toml pins the toolchain; rustup installs it on first use.
+      - name: Check formatting
+        run: cargo fmt --check
+      - name: Lint
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Prove the Rust crate matches the Go package and the fixtures
+        run: cargo test --locked
+
   consumer-compatibility:
     needs: qa-contracts
     if: needs.qa-contracts.outputs.checks_required != 'false' && contains(format(',{0},', needs.qa-contracts.outputs.contracts), ',consumer-compatibility,')
@@ -181,7 +202,7 @@ jobs:
 
   ci-result:
     name: CI result
-    needs: [line-limit, qa-contracts, go-checks, wire-conformance, consumer-compatibility]
+    needs: [line-limit, qa-contracts, go-checks, wire-conformance, rust-parity, consumer-compatibility]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -203,7 +224,7 @@ jobs:
               sys.exit("QA selection did not produce a valid check plan")
           selected = set(outputs.get("contracts", "").split(","))
           if checks == "true":
-              required.update(selected & {"wire-conformance", "consumer-compatibility"})
+              required.update(selected & {"wire-conformance", "rust-parity", "consumer-compatibility"})
           failed = [name for name, job in jobs.items()
                     if job["result"] not in (("success",) if name in required else ("success", "skipped"))]
           if failed:

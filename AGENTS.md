@@ -103,6 +103,11 @@ Read user-facing text once against this list before you ship it.
 
 - `message.go` and the other root Go files define the wire messages.
   `testdata/conformance/` holds the interoperability fixtures.
+- `rust/` holds the same messages as a Rust crate. Change the Go file and its
+  Rust module together. `cargo test --locked` in `rust/` reads the Go source
+  and fails when a message type, payload, field or closed value exists on one
+  side only. Also run `cargo fmt --check` and
+  `cargo clippy --locked --all-targets -- -D warnings`.
 - Keep the package independent of Hub internals. It uses only the standard
   library; add a dependency only when the change needs it.
 - Keep the wire format compatible. A schema change needs matching Hub and
