@@ -1,3 +1,4 @@
+# The latest stable Rust (owner rule). CI runs `rustup update stable` first.
 [toolchain]
-channel = "1.99.1"
+channel = "stable"
 components = ["clippy", "rustfmt"]
