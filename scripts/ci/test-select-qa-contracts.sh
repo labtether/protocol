@@ -14,6 +14,16 @@ output="$("${selector}" --files-from "${tmp_dir}/files")"
 grep -Fq "QA contract wire-conformance:" <<< "${output}"
 grep -Fq "QA contract consumer-compatibility:" <<< "${output}"
 
+grep -Fq "QA contract rust-parity:" <<< "${output}"
+
+printf '%s\n' "rust/src/files.rs" > "${tmp_dir}/files"
+output="$("${selector}" --files-from "${tmp_dir}/files")"
+grep -Fq "QA contract rust-parity:" <<< "${output}"
+if grep -Fq "QA contract consumer-compatibility:" <<< "${output}"; then
+  echo "Rust-only change unexpectedly selected the Go consumers" >&2
+  exit 1
+fi
+
 for source in agent_runtime.go docker_endpoint.go remote_access.go system_operations.go; do
   printf '%s\n' "${source}" > "${tmp_dir}/files"
   output="$("${selector}" --files-from "${tmp_dir}/files")"

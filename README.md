@@ -31,6 +31,11 @@ msg := protocol.Message{
 }
 ```
 
+## Rust
+
+The same messages as a Rust crate are in [rust/](rust/README.md). CI fails
+when the Go package and the crate disagree.
+
 ## Rules
 
 - Standard library only (`encoding/json`). No imports from the hub.
