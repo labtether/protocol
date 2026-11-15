@@ -12,6 +12,13 @@ No change to the wire format.
 - `rust/` adds the `labtether-protocol` crate: every message type, payload and
   validation rule of the Go package. CI fails when the two disagree.
 
+### Local agent contract
+
+- `localagent/` adds a JSON Schema, the closed code sets and ten real example
+  bodies for the agent's local `GET /agent/status`, which the macOS and
+  Windows apps read. The Go package checks a body against them. No Hub-agent
+  message changed.
+
 ## v2.0.1
 
 No change to the protocol since v2.0.0. The tag exists so that the Hub, the
