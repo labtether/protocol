@@ -99,7 +99,7 @@ jobs:
           CHECKS_REQUIRED: ${{ needs.qa-contracts.outputs.checks_required }}
         run: |
           if [[ "${CHECKS_REQUIRED}" != "false" ]]; then
-            go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+            go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
           fi
           # actionlint and gitleaks are release binaries pinned by SHA-256.
           # Building both from source took about 40 seconds on every run.
@@ -121,7 +121,9 @@ jobs:
           echo "${GOBIN}" >> "${GITHUB_PATH}"
       - name: Go security scan
         if: needs.qa-contracts.outputs.checks_required != 'false'
-        run: gosec -quiet ./...
+        run: |
+          bash ./scripts/ci/test-gosec-gate.sh
+          bash ./scripts/check-gosec.sh
       - name: Lint GitHub Actions workflows
         run: actionlint
       - name: Scan current source for secrets
